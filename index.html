@@ -1,341 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Photo Submission Form</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<title>Photo Submission Form</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f7fb;
-      padding: 20px;
-    }
+<style>
+body {
+  font-family: Arial;
+  background: #f4f6fb;
+  padding: 20px;
+}
 
-    .container {
-      max-width: 850px;
-      margin: auto;
-      background: white;
-      padding: 25px;
-      border-radius: 14px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
-    }
+.container {
+  max-width: 850px;
+  margin: auto;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
 
-    h1 {
-      margin-top: 0;
-      text-align: center;
-    }
+h1 {
+  text-align: center;
+}
 
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 18px;
-    }
+label {
+  font-weight: bold;
+  margin-top: 15px;
+  display: block;
+}
 
-    input, select, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 15px;
-      box-sizing: border-box;
-    }
+input, select, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
 
-    input:disabled {
-      background: #e9ecef;
-      color: #555;
-    }
+input:disabled {
+  background: #e9ecef;
+}
 
-    .autocomplete-box {
-      position: relative;
-    }
+.autocomplete-box {
+  position: relative;
+}
 
-    .suggestions {
-      position: absolute;
-      background: white;
-      border: 1px solid #ccc;
-      width: 100%;
-      max-height: 180px;
-      overflow-y: auto;
-      z-index: 10;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
+.suggestions {
+  position: absolute;
+  width: 100%;
+  background: white;
+  border: 1px solid #ccc;
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 10;
+}
 
-    .suggestion-item {
-      padding: 10px;
-      cursor: pointer;
-    }
+.suggestion-item {
+  padding: 10px;
+  cursor: pointer;
+}
 
-    .suggestion-item:hover {
-      background: #f0f0f0;
-    }
+.suggestion-item:hover {
+  background: #eee;
+}
 
-    .photo-card {
-      background: #f8f9fc;
-      border: 1px solid #ddd;
-      padding: 16px;
-      border-radius: 12px;
-      margin-top: 18px;
-    }
+.photo-card {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin-top: 15px;
+  border-radius: 10px;
+  background: #fafafa;
+}
 
-    .checkbox-group label {
-      font-weight: normal;
-      margin-top: 8px;
-    }
+.checkbox-group label {
+  font-weight: normal;
+}
 
-    .checkbox-group input {
-      width: auto;
-      margin-right: 8px;
-    }
+button {
+  margin-top: 20px;
+  background: #1f4e79;
+  color: white;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-    button {
-      background: #1f4e79;
-      color: white;
-      font-weight: bold;
-      border: none;
-      margin-top: 25px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #173b5c;
-    }
-
-    .status {
-      margin-top: 18px;
-      font-weight: bold;
-      text-align: center;
-    }
-
-    .success {
-      color: green;
-    }
-
-    .error {
-      color: red;
-    }
-  </style>
+.status {
+  margin-top: 15px;
+  text-align: center;
+}
+</style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>Photo Submission Form</h1>
 
-    <form id="submissionForm">
+<div class="container">
+<h1>Photo Submission</h1>
 
-      <label>Rep Name</label>
-      <div class="autocomplete-box">
-        <input type="text" id="repName" autocomplete="off" required />
-        <div id="repSuggestions" class="suggestions"></div>
+<form id="form">
+
+<label>Rep Name</label>
+<div class="autocomplete-box">
+  <input id="repName" autocomplete="off" required>
+  <div id="repSuggestions" class="suggestions"></div>
+</div>
+
+<label>Account Name</label>
+<div class="autocomplete-box">
+  <input id="accountName" autocomplete="off" required>
+  <div id="accountSuggestions" class="suggestions"></div>
+</div>
+
+<label>Account ID</label>
+<input id="accountId" disabled>
+
+<label>Upload Photos (Max 5)</label>
+<input type="file" id="photos" multiple accept="image/*" required>
+
+<div id="photoFields"></div>
+
+<button type="submit">Submit</button>
+
+<div id="status" class="status"></div>
+
+</form>
+</div>
+
+<script>
+
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyPnIkuLKGnCn6eJUPDVhS8nFLQyQ0hzGHYlUlzUfzqvtf91JfAvttKD_AlY4fAYRp6sg/exec";
+
+let reps = [];
+let accounts = [];
+
+/* LOAD DATA */
+async function loadData() {
+  const res = await fetch(WEB_APP_URL + "?action=getData");
+  const data = await res.json();
+
+  reps = data.reps || [];
+  accounts = data.accounts || [];
+
+  setupAutocomplete("repName", "repSuggestions", reps, () => {});
+  setupAutocomplete("accountName", "accountSuggestions", accounts, (item) => {
+    document.getElementById("accountId").value = item.id;
+  });
+}
+
+/* AUTOCOMPLETE */
+function setupAutocomplete(inputId, boxId, data, onSelect) {
+  const input = document.getElementById(inputId);
+  const box = document.getElementById(boxId);
+
+  input.addEventListener("input", () => {
+    const value = input.value.toLowerCase();
+    box.innerHTML = "";
+
+    if (!value) return;
+
+    const matches = data.filter(x =>
+      x.name.toLowerCase().includes(value)
+    ).slice(0, 10);
+
+    matches.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "suggestion-item";
+      div.textContent = item.name;
+
+      div.addEventListener("mousedown", () => {
+        input.value = item.name;
+        box.innerHTML = "";
+        onSelect(item);
+      });
+
+      box.appendChild(div);
+    });
+  });
+
+  input.addEventListener("blur", () => {
+    setTimeout(() => box.innerHTML = "", 150);
+  });
+}
+
+/* PHOTO FIELDS */
+document.getElementById("photos").addEventListener("change", function () {
+  const files = Array.from(this.files);
+  const container = document.getElementById("photoFields");
+
+  container.innerHTML = "";
+
+  if (files.length > 5) {
+    alert("Max 5 photos.");
+    this.value = "";
+    return;
+  }
+
+  files.forEach((file, i) => {
+    const card = document.createElement("div");
+    card.className = "photo-card";
+
+    card.innerHTML = `
+      <h3>Photo ${i+1}: ${file.name}</h3>
+
+      <label>Select P(s)</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" value="P1" name="p-${i}"> P1</label>
+        <label><input type="checkbox" value="P2" name="p-${i}"> P2</label>
+        <label><input type="checkbox" value="P3" name="p-${i}"> P3</label>
+        <label><input type="checkbox" value="P4" name="p-${i}"> P4</label>
+        <label><input type="checkbox" value="P5" name="p-${i}"> P5</label>
+        <label><input type="checkbox" value="P6" name="p-${i}"> P6</label>
       </div>
 
-      <label>Account Name</label>
-      <div class="autocomplete-box">
-        <input type="text" id="accountName" autocomplete="off" required />
-        <div id="accountSuggestions" class="suggestions"></div>
-      </div>
+      <label>Tactic</label>
+      <select name="tactic-${i}">
+        <option value="">Select</option>
+        <option>Coldbox</option>
+        <option>Menu</option>
+        <option>Shelf</option>
+        <option>Staff Training</option>
+        <option>25cs+ Display</option>
+        <option>5cs+ Display</option>
+        <option>Backbar</option>
+        <option>Other</option>
+      </select>
+    `;
 
-      <label>Account ID</label>
-      <input type="text" id="accountId" disabled />
+    container.appendChild(card);
+  });
+});
 
-      <label>Upload Photos, Maximum 5</label>
-      <input type="file" id="photos" accept="image/*" multiple required />
+/* BASE64 */
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result.split(",")[1]);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+}
 
-      <div id="photoFields"></div>
+/* SUBMIT */
+document.getElementById("form").addEventListener("submit", async e => {
+  e.preventDefault();
 
-      <button type="submit">Submit Photos</button>
+  const status = document.getElementById("status");
+  status.innerText = "Submitting...";
 
-      <div id="status" class="status"></div>
-    </form>
-  </div>
+  const repName = document.getElementById("repName").value;
+  const accountName = document.getElementById("accountName").value;
+  const accountId = document.getElementById("accountId").value;
+  const files = Array.from(document.getElementById("photos").files);
 
-  <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmmajE0C70AqOXpVLVSztnnsp6bgI0hxS3NmP7_rAWPK42lfC200FRNSSSSH4q2LCRNQ/exec";
+  if (!accountId) {
+    status.innerText = "Select valid account.";
+    return;
+  }
 
-    let reps = [];
-    let accounts = [];
+  const photos = [];
 
-    async function loadData() {
-      const response = await fetch(WEB_APP_URL + "?action=getData");
-      const data = await response.json();
+  for (let i = 0; i < files.length; i++) {
+    const p = Array.from(document.querySelectorAll(`input[name="p-${i}"]:checked`))
+      .map(x => x.value)
+      .join("-");
 
-      reps = data.reps;
-      accounts = data.accounts;
+    const tactic = document.querySelector(`[name="tactic-${i}"]`).value;
+
+    if (!p || !tactic) {
+      status.innerText = "Fill all photo fields.";
+      return;
     }
 
-    function setupAutocomplete(inputId, suggestionsId, data, onSelect) {
-      const input = document.getElementById(inputId);
-      const suggestionsBox = document.getElementById(suggestionsId);
+    photos.push({
+      originalFileName: files[i].name,
+      mimeType: files[i].type,
+      base64: await toBase64(files[i]),
+      pSelection: p,
+      tactic: tactic
+    });
+  }
 
-      input.addEventListener("input", () => {
-        const value = input.value.toLowerCase();
-        suggestionsBox.innerHTML = "";
+  const payload = { repName, accountName, accountId, photos };
 
-        if (!value) return;
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
 
-        const matches = data
-          .filter(item => item.name.toLowerCase().includes(value))
-          .slice(0, 10);
+    const result = await res.json();
 
-        matches.forEach(item => {
-          const div = document.createElement("div");
-          div.className = "suggestion-item";
-          div.textContent = item.name;
-
-          div.onclick = () => {
-            input.value = item.name;
-            suggestionsBox.innerHTML = "";
-            onSelect(item);
-          };
-
-          suggestionsBox.appendChild(div);
-        });
-      });
+    if (result.success) {
+      status.innerText = "Submitted successfully";
+      document.getElementById("form").reset();
+      document.getElementById("photoFields").innerHTML = "";
+      document.getElementById("accountId").value = "";
+    } else {
+      throw new Error(result.message);
     }
 
-    document.getElementById("photos").addEventListener("change", function () {
-      const files = Array.from(this.files);
-      const photoFields = document.getElementById("photoFields");
+  } catch (err) {
+    status.innerText = "Error: " + err.message;
+  }
+});
 
-      photoFields.innerHTML = "";
+/* INIT */
+loadData();
 
-      if (files.length > 5) {
-        alert("You can only upload up to 5 photos.");
-        this.value = "";
-        return;
-      }
-
-      files.forEach((file, index) => {
-        const card = document.createElement("div");
-        card.className = "photo-card";
-
-        card.innerHTML = `
-          <h3>Photo ${index + 1}: ${file.name}</h3>
-
-          <label>Select which P applies. Select all that apply.</label>
-          <div class="checkbox-group">
-            <label><input type="checkbox" name="pSelection-${index}" value="P1 Product Assortment"> P1: Product Assortment</label>
-            <label><input type="checkbox" name="pSelection-${index}" value="P2 Pricing"> P2: Pricing</label>
-            <label><input type="checkbox" name="pSelection-${index}" value="P3 Placement"> P3: Placement</label>
-            <label><input type="checkbox" name="pSelection-${index}" value="P4 Promotions"> P4: Promotions</label>
-            <label><input type="checkbox" name="pSelection-${index}" value="P5 People"> P5: People</label>
-            <label><input type="checkbox" name="pSelection-${index}" value="P6 Point of Sale"> P6: Point of Sale</label>
-          </div>
-
-          <label>What tactic did you capture in this photo?</label>
-          <select name="tactic-${index}" required>
-            <option value="">Select tactic</option>
-            <option value="Coldbox">Coldbox</option>
-            <option value="Menu">Menu</option>
-            <option value="Shelf">Shelf</option>
-            <option value="Staff Training">Staff Training</option>
-            <option value="25cs+ Display">25cs+ Display</option>
-            <option value="5cs+ Display">5cs+ Display</option>
-            <option value="Backbar">Backbar</option>
-            <option value="Other">Other</option>
-          </select>
-        `;
-
-        photoFields.appendChild(card);
-      });
-    });
-
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-
-        reader.onload = () => {
-          const base64 = reader.result.split(",")[1];
-          resolve(base64);
-        };
-
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    document.getElementById("submissionForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const status = document.getElementById("status");
-      status.textContent = "Submitting...";
-      status.className = "status";
-
-      const repName = document.getElementById("repName").value.trim();
-      const accountName = document.getElementById("accountName").value.trim();
-      const accountId = document.getElementById("accountId").value.trim();
-      const files = Array.from(document.getElementById("photos").files);
-
-      if (!accountId) {
-        status.textContent = "Please select a valid account from the dropdown.";
-        status.className = "status error";
-        return;
-      }
-
-      const photos = [];
-
-      for (let i = 0; i < files.length; i++) {
-        const pSelections = Array.from(
-          document.querySelectorAll(`input[name="pSelection-${i}"]:checked`)
-        ).map(cb => cb.value);
-
-        const tactic = document.querySelector(`select[name="tactic-${i}"]`).value;
-
-        if (pSelections.length === 0 || !tactic) {
-          status.textContent = `Please complete all fields for Photo ${i + 1}.`;
-          status.className = "status error";
-          return;
-        }
-
-        photos.push({
-          originalFileName: files[i].name,
-          mimeType: files[i].type,
-          base64: await fileToBase64(files[i]),
-          pSelection: pSelections.join("-"),
-          tactic: tactic
-        });
-      }
-
-      const payload = {
-        repName,
-        accountName,
-        accountId,
-        photos
-      };
-
-      try {
-        const response = await fetch(WEB_APP_URL, {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          status.textContent = "Submission saved successfully.";
-          status.className = "status success";
-          document.getElementById("submissionForm").reset();
-          document.getElementById("accountId").value = "";
-          document.getElementById("photoFields").innerHTML = "";
-        } else {
-          throw new Error(result.message);
-        }
-
-      } catch (err) {
-        status.textContent = "Error submitting form: " + err.message;
-        status.className = "status error";
-      }
-    });
-
-    loadData().then(() => {
-      setupAutocomplete("repName", "repSuggestions", reps, () => {});
-
-      setupAutocomplete("accountName", "accountSuggestions", accounts, (item) => {
-        document.getElementById("accountId").value = item.id;
-      });
-    });
-  </script>
+</script>
 </body>
 </html>

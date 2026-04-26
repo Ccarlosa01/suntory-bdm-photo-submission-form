@@ -206,12 +206,12 @@ document.getElementById("photos").addEventListener("change", function () {
 
       <label>Select P(s)</label>
       <div class="checkbox-group">
-        <label><input type="checkbox" value="P1" name="p-${i}"> P1</label>
-        <label><input type="checkbox" value="P2" name="p-${i}"> P2</label>
-        <label><input type="checkbox" value="P3" name="p-${i}"> P3</label>
-        <label><input type="checkbox" value="P4" name="p-${i}"> P4</label>
-        <label><input type="checkbox" value="P5" name="p-${i}"> P5</label>
-        <label><input type="checkbox" value="P6" name="p-${i}"> P6</label>
+        <label><input type="checkbox" value="P1 Product Assortment" name="p-${i}"> P1: Product Assortment</label>
+        <label><input type="checkbox" value="P2 Pricing" name="p-${i}"> P2: Pricing</label>
+        <label><input type="checkbox" value="P3 Placement" name="p-${i}"> P3: Placement</label>
+        <label><input type="checkbox" value="P4 Promotions" name="p-${i}"> P4: Promotions</label>
+        <label><input type="checkbox" value="P5 People" name="p-${i}"> P5: People</label>
+        <label><input type="checkbox" value="P6 Point of Sale" name="p-${i}"> P6: Point of Sale</label>
       </div>
 
       <label>Tactic</label>
@@ -264,7 +264,7 @@ document.getElementById("form").addEventListener("submit", async e => {
   for (let i = 0; i < files.length; i++) {
     const p = Array.from(document.querySelectorAll(`input[name="p-${i}"]:checked`))
       .map(x => x.value)
-      .join("-");
+      .join(", ");
 
     const tactic = document.querySelector(`[name="tactic-${i}"]`).value;
 

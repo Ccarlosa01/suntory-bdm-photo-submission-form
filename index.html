@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Photo Submission Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 850px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 18px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+
+    input:disabled {
+      background: #e9ecef;
+      color: #555;
+    }
+
+    .autocomplete-box {
+      position: relative;
+    }
+
+    .suggestions {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      width: 100%;
+      max-height: 180px;
+      overflow-y: auto;
+      z-index: 10;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    .suggestion-item {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .suggestion-item:hover {
+      background: #f0f0f0;
+    }
+
+    .photo-card {
+      background: #f8f9fc;
+      border: 1px solid #ddd;
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 18px;
+    }
+
+    .checkbox-group label {
+      font-weight: normal;
+      margin-top: 8px;
+    }
+
+    .checkbox-group input {
+      width: auto;
+      margin-right: 8px;
+    }
+
+    button {
+      background: #1f4e79;
+      color: white;
+      font-weight: bold;
+      border: none;
+      margin-top: 25px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #173b5c;
+    }
+
+    .status {
+      margin-top: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Photo Submission Form</h1>
+
+    <form id="submissionForm">
+
+      <label>Rep Name</label>
+      <div class="autocomplete-box">
+        <input type="text" id="repName" autocomplete="off" required />
+        <div id="repSuggestions" class="suggestions"></div>
+      </div>
+
+      <label>Account Name</label>
+      <div class="autocomplete-box">
+        <input type="text" id="accountName" autocomplete="off" required />
+        <div id="accountSuggestions" class="suggestions"></div>
+      </div>
+
+      <label>Account ID</label>
+      <input type="text" id="accountId" disabled />
+
+      <label>Upload Photos, Maximum 5</label>
+      <input type="file" id="photos" accept="image/*" multiple required />
+
+      <div id="photoFields"></div>
+
+      <button type="submit">Submit Photos</button>
+
+      <div id="status" class="status"></div>
+    </form>
+  </div>
+
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzmmajE0C70AqOXpVLVSztnnsp6bgI0hxS3NmP7_rAWPK42lfC200FRNSSSSH4q2LCRNQ/exec";
+
+    let reps = [];
+    let accounts = [];
+
+    async function loadData() {
+      const response = await fetch(WEB_APP_URL + "?action=getData");
+      const data = await response.json();
+
+      reps = data.reps;
+      accounts = data.accounts;
+    }
+
+    function setupAutocomplete(inputId, suggestionsId, data, onSelect) {
+      const input = document.getElementById(inputId);
+      const suggestionsBox = document.getElementById(suggestionsId);
+
+      input.addEventListener("input", () => {
+        const value = input.value.toLowerCase();
+        suggestionsBox.innerHTML = "";
+
+        if (!value) return;
+
+        const matches = data
+          .filter(item => item.name.toLowerCase().includes(value))
+          .slice(0, 10);
+
+        matches.forEach(item => {
+          const div = document.createElement("div");
+          div.className = "suggestion-item";
+          div.textContent = item.name;
+
+          div.onclick = () => {
+            input.value = item.name;
+            suggestionsBox.innerHTML = "";
+            onSelect(item);
+          };
+
+          suggestionsBox.appendChild(div);
+        });
+      });
+    }
+
+    document.getElementById("photos").addEventListener("change", function () {
+      const files = Array.from(this.files);
+      const photoFields = document.getElementById("photoFields");
+
+      photoFields.innerHTML = "";
+
+      if (files.length > 5) {
+        alert("You can only upload up to 5 photos.");
+        this.value = "";
+        return;
+      }
+
+      files.forEach((file, index) => {
+        const card = document.createElement("div");
+        card.className = "photo-card";
+
+        card.innerHTML = `
+          <h3>Photo ${index + 1}: ${file.name}</h3>
+
+          <label>Select which P applies. Select all that apply.</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" name="pSelection-${index}" value="P1 Product Assortment"> P1: Product Assortment</label>
+            <label><input type="checkbox" name="pSelection-${index}" value="P2 Pricing"> P2: Pricing</label>
+            <label><input type="checkbox" name="pSelection-${index}" value="P3 Placement"> P3: Placement</label>
+            <label><input type="checkbox" name="pSelection-${index}" value="P4 Promotions"> P4: Promotions</label>
+            <label><input type="checkbox" name="pSelection-${index}" value="P5 People"> P5: People</label>
+            <label><input type="checkbox" name="pSelection-${index}" value="P6 Point of Sale"> P6: Point of Sale</label>
+          </div>
+
+          <label>What tactic did you capture in this photo?</label>
+          <select name="tactic-${index}" required>
+            <option value="">Select tactic</option>
+            <option value="Coldbox">Coldbox</option>
+            <option value="Menu">Menu</option>
+            <option value="Shelf">Shelf</option>
+            <option value="Staff Training">Staff Training</option>
+            <option value="25cs+ Display">25cs+ Display</option>
+            <option value="5cs+ Display">5cs+ Display</option>
+            <option value="Backbar">Backbar</option>
+            <option value="Other">Other</option>
+          </select>
+        `;
+
+        photoFields.appendChild(card);
+      });
+    });
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          const base64 = reader.result.split(",")[1];
+          resolve(base64);
+        };
+
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    document.getElementById("submissionForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const status = document.getElementById("status");
+      status.textContent = "Submitting...";
+      status.className = "status";
+
+      const repName = document.getElementById("repName").value.trim();
+      const accountName = document.getElementById("accountName").value.trim();
+      const accountId = document.getElementById("accountId").value.trim();
+      const files = Array.from(document.getElementById("photos").files);
+
+      if (!accountId) {
+        status.textContent = "Please select a valid account from the dropdown.";
+        status.className = "status error";
+        return;
+      }
+
+      const photos = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const pSelections = Array.from(
+          document.querySelectorAll(`input[name="pSelection-${i}"]:checked`)
+        ).map(cb => cb.value);
+
+        const tactic = document.querySelector(`select[name="tactic-${i}"]`).value;
+
+        if (pSelections.length === 0 || !tactic) {
+          status.textContent = `Please complete all fields for Photo ${i + 1}.`;
+          status.className = "status error";
+          return;
+        }
+
+        photos.push({
+          originalFileName: files[i].name,
+          mimeType: files[i].type,
+          base64: await fileToBase64(files[i]),
+          pSelection: pSelections.join("-"),
+          tactic: tactic
+        });
+      }
+
+      const payload = {
+        repName,
+        accountName,
+        accountId,
+        photos
+      };
+
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          status.textContent = "Submission saved successfully.";
+          status.className = "status success";
+          document.getElementById("submissionForm").reset();
+          document.getElementById("accountId").value = "";
+          document.getElementById("photoFields").innerHTML = "";
+        } else {
+          throw new Error(result.message);
+        }
+
+      } catch (err) {
+        status.textContent = "Error submitting form: " + err.message;
+        status.className = "status error";
+      }
+    });
+
+    loadData().then(() => {
+      setupAutocomplete("repName", "repSuggestions", reps, () => {});
+
+      setupAutocomplete("accountName", "accountSuggestions", accounts, (item) => {
+        document.getElementById("accountId").value = item.id;
+      });
+    });
+  </script>
+</body>
+</html>

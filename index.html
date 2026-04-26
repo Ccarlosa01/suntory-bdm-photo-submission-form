@@ -149,6 +149,19 @@ async function loadData() {
   });
 }
 
+function handleOtherTactic(select, index) {
+  const input = document.querySelector(`input[name="other-${index}"]`);
+
+  if (select.value === "Other") {
+    input.style.display = "block";
+    input.required = true;
+  } else {
+    input.style.display = "none";
+    input.required = false;
+    input.value = "";
+  }
+}
+  
 /* AUTOCOMPLETE */
 function setupAutocomplete(inputId, boxId, data, onSelect) {
   const input = document.getElementById(inputId);
@@ -215,17 +228,24 @@ document.getElementById("photos").addEventListener("change", function () {
       </div>
 
       <label>Tactic</label>
-      <select name="tactic-${i}">
+      <select name="tactic-${i}" onchange="handleOtherTactic(this, ${i})">
         <option value="">Select</option>
-        <option>Coldbox</option>
-        <option>Menu</option>
-        <option>Shelf</option>
-        <option>Staff Training</option>
-        <option>25cs+ Display</option>
-        <option>5cs+ Display</option>
-        <option>Backbar</option>
-        <option>Other</option>
+        <option value="Coldbox">Coldbox</option>
+        <option value="Menu">Menu</option>
+        <option value="Shelf">Shelf</option>
+        <option value="Staff Training">Staff Training</option>
+        <option value="25cs+ Display">25cs+ Display</option>
+        <option value="5cs+ Display">5cs+ Display</option>
+        <option value="Backbar">Backbar</option>
+        <option value="Other">Other</option>
       </select>
+      
+      <input 
+        type="text" 
+        name="other-${i}" 
+        placeholder="Enter custom tactic..." 
+        style="display:none; margin-top:8px;"
+      >
     `;
 
     container.appendChild(card);
@@ -266,7 +286,18 @@ document.getElementById("form").addEventListener("submit", async e => {
       .map(x => x.value)
       .join(", ");
 
-    const tactic = document.querySelector(`[name="tactic-${i}"]`).value;
+    let tactic = document.querySelector(`[name="tactic-${i}"]`).value;
+
+    if (tactic === "Other") {
+      const otherVal = document.querySelector(`[name="other-${i}"]`).value.trim();
+    
+      if (!otherVal) {
+        status.innerText = "Please enter a custom tactic for 'Other'.";
+        return;
+      }
+    
+      tactic = otherVal;
+    }
 
     if (!p || !tactic) {
       status.innerText = "Fill all photo fields.";

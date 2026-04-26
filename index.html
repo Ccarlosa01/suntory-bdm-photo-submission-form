@@ -21,9 +21,7 @@ body {
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
-h1 {
-  text-align: center;
-}
+h1 { text-align: center; }
 
 label {
   font-weight: bold;
@@ -37,15 +35,12 @@ input, select, button {
   margin-top: 5px;
   border-radius: 8px;
   border: 1px solid #ccc;
+  box-sizing: border-box;
 }
 
-input:disabled {
-  background: #e9ecef;
-}
+input:disabled { background: #e9ecef; }
 
-.autocomplete-box {
-  position: relative;
-}
+.autocomplete-box { position: relative; }
 
 .suggestions {
   position: absolute;
@@ -62,9 +57,7 @@ input:disabled {
   cursor: pointer;
 }
 
-.suggestion-item:hover {
-  background: #eee;
-}
+.suggestion-item:hover { background: #eee; }
 
 .photo-card {
   border: 1px solid #ddd;
@@ -74,8 +67,27 @@ input:disabled {
   background: #fafafa;
 }
 
+.photo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.remove-btn {
+  width: auto;
+  background: #b00020;
+  padding: 8px 12px;
+  margin-top: 0;
+}
+
 .checkbox-group label {
   font-weight: normal;
+  margin-top: 8px;
+}
+
+.checkbox-group input {
+  width: auto;
+  margin-right: 8px;
 }
 
 button {
@@ -87,9 +99,16 @@ button {
   cursor: pointer;
 }
 
+button:hover { background: #173b5c; }
+
+.secondary-btn {
+  background: #2f6f9f;
+}
+
 .status {
   margin-top: 15px;
   text-align: center;
+  font-weight: bold;
 }
 </style>
 </head>
@@ -116,12 +135,11 @@ button {
 <label>Account ID</label>
 <input id="accountId" disabled>
 
-<label>Upload Photos (Max 5)</label>
-<input type="file" id="photos" multiple accept="image/*" required>
-
 <div id="photoFields"></div>
 
-<button type="submit">Submit</button>
+<button type="button" class="secondary-btn" onclick="addPhotoCard()">+ Add Photo</button>
+
+<button type="submit">Submit All Photos</button>
 
 <div id="status" class="status"></div>
 
@@ -134,6 +152,8 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyPnIkuLKGnCn6eJUPD
 
 let reps = [];
 let accounts = [];
+let photoCount = 0;
+const MAX_PHOTOS = 5;
 
 /* LOAD DATA */
 async function loadData() {
@@ -149,19 +169,6 @@ async function loadData() {
   });
 }
 
-function handleOtherTactic(select, index) {
-  const input = document.querySelector(`input[name="other-${index}"]`);
-
-  if (select.value === "Other") {
-    input.style.display = "block";
-    input.required = true;
-  } else {
-    input.style.display = "none";
-    input.required = false;
-    input.value = "";
-  }
-}
-  
 /* AUTOCOMPLETE */
 function setupAutocomplete(inputId, boxId, data, onSelect) {
   const input = document.getElementById(inputId);
@@ -197,60 +204,96 @@ function setupAutocomplete(inputId, boxId, data, onSelect) {
   });
 }
 
-/* PHOTO FIELDS */
-document.getElementById("photos").addEventListener("change", function () {
-  const files = Array.from(this.files);
-  const container = document.getElementById("photoFields");
+/* ADD ONE PHOTO CARD AT A TIME */
+function addPhotoCard() {
+  const currentCards = document.querySelectorAll(".photo-card").length;
 
-  container.innerHTML = "";
-
-  if (files.length > 5) {
-    alert("Max 5 photos.");
-    this.value = "";
+  if (currentCards >= MAX_PHOTOS) {
+    alert("You can only add up to 5 photos.");
     return;
   }
 
-  files.forEach((file, i) => {
-    const card = document.createElement("div");
-    card.className = "photo-card";
+  photoCount++;
 
-    card.innerHTML = `
-      <h3>Photo ${i+1}: ${file.name}</h3>
+  const index = photoCount;
+  const container = document.getElementById("photoFields");
 
-      <label>Select P(s)</label>
-      <div class="checkbox-group">
-        <label><input type="checkbox" value="P1 Product Assortment" name="p-${i}"> P1: Product Assortment</label>
-        <label><input type="checkbox" value="P2 Pricing" name="p-${i}"> P2: Pricing</label>
-        <label><input type="checkbox" value="P3 Placement" name="p-${i}"> P3: Placement</label>
-        <label><input type="checkbox" value="P4 Promotions" name="p-${i}"> P4: Promotions</label>
-        <label><input type="checkbox" value="P5 People" name="p-${i}"> P5: People</label>
-        <label><input type="checkbox" value="P6 Point of Sale" name="p-${i}"> P6: Point of Sale</label>
-      </div>
+  const card = document.createElement("div");
+  card.className = "photo-card";
+  card.dataset.index = index;
 
-      <label>Tactic</label>
-      <select name="tactic-${i}" onchange="handleOtherTactic(this, ${i})">
-        <option value="">Select</option>
-        <option value="Coldbox">Coldbox</option>
-        <option value="Menu">Menu</option>
-        <option value="Shelf">Shelf</option>
-        <option value="Staff Training">Staff Training</option>
-        <option value="25cs+ Display">25cs+ Display</option>
-        <option value="5cs+ Display">5cs+ Display</option>
-        <option value="Backbar">Backbar</option>
-        <option value="Other">Other</option>
-      </select>
-      
-      <input 
-        type="text" 
-        name="other-${i}" 
-        placeholder="Enter custom tactic..." 
-        style="display:none; margin-top:8px;"
-      >
-    `;
+  card.innerHTML = `
+    <div class="photo-header">
+      <h3>Photo ${currentCards + 1}</h3>
+      <button type="button" class="remove-btn" onclick="removePhotoCard(this)">Remove</button>
+    </div>
 
-    container.appendChild(card);
+    <label>Attach Photo</label>
+    <input type="file" name="photoFile-${index}" accept="image/*" required>
+
+    <label>Select P(s)</label>
+    <div class="checkbox-group">
+      <label><input type="checkbox" value="P1 Product Assortment" name="p-${index}"> P1: Product Assortment</label>
+      <label><input type="checkbox" value="P2 Pricing" name="p-${index}"> P2: Pricing</label>
+      <label><input type="checkbox" value="P3 Placement" name="p-${index}"> P3: Placement</label>
+      <label><input type="checkbox" value="P4 Promotions" name="p-${index}"> P4: Promotions</label>
+      <label><input type="checkbox" value="P5 People" name="p-${index}"> P5: People</label>
+      <label><input type="checkbox" value="P6 Point of Sale" name="p-${index}"> P6: Point of Sale</label>
+    </div>
+
+    <label>Tactic</label>
+    <select name="tactic-${index}" onchange="handleOtherTactic(this, ${index})" required>
+      <option value="">Select</option>
+      <option value="Coldbox">Coldbox</option>
+      <option value="Menu">Menu</option>
+      <option value="Shelf">Shelf</option>
+      <option value="Staff Training">Staff Training</option>
+      <option value="25cs+ Display">25cs+ Display</option>
+      <option value="5cs+ Display">5cs+ Display</option>
+      <option value="Backbar">Backbar</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <input
+      type="text"
+      name="other-${index}"
+      placeholder="Enter custom tactic..."
+      maxlength="60"
+      style="display:none; margin-top:8px;"
+    >
+  `;
+
+  container.appendChild(card);
+  renumberPhotoCards();
+}
+
+/* REMOVE PHOTO CARD */
+function removePhotoCard(button) {
+  button.closest(".photo-card").remove();
+  renumberPhotoCards();
+}
+
+/* RENUMBER VISIBLE PHOTO CARDS */
+function renumberPhotoCards() {
+  const cards = document.querySelectorAll(".photo-card");
+  cards.forEach((card, i) => {
+    card.querySelector("h3").innerText = `Photo ${i + 1}`;
   });
-});
+}
+
+/* OTHER TACTIC SHORT ANSWER */
+function handleOtherTactic(select, index) {
+  const input = document.querySelector(`input[name="other-${index}"]`);
+
+  if (select.value === "Other") {
+    input.style.display = "block";
+    input.required = true;
+  } else {
+    input.style.display = "none";
+    input.required = false;
+    input.value = "";
+  }
+}
 
 /* BASE64 */
 function toBase64(file) {
@@ -269,45 +312,61 @@ document.getElementById("form").addEventListener("submit", async e => {
   const status = document.getElementById("status");
   status.innerText = "Submitting...";
 
-  const repName = document.getElementById("repName").value;
-  const accountName = document.getElementById("accountName").value;
-  const accountId = document.getElementById("accountId").value;
-  const files = Array.from(document.getElementById("photos").files);
+  const repName = document.getElementById("repName").value.trim();
+  const accountName = document.getElementById("accountName").value.trim();
+  const accountId = document.getElementById("accountId").value.trim();
 
   if (!accountId) {
-    status.innerText = "Select valid account.";
+    status.innerText = "Please select a valid account from the dropdown.";
+    return;
+  }
+
+  const cards = Array.from(document.querySelectorAll(".photo-card"));
+
+  if (cards.length === 0) {
+    status.innerText = "Please add at least one photo.";
     return;
   }
 
   const photos = [];
 
-  for (let i = 0; i < files.length; i++) {
-    const p = Array.from(document.querySelectorAll(`input[name="p-${i}"]:checked`))
+  for (const card of cards) {
+    const index = card.dataset.index;
+
+    const fileInput = document.querySelector(`input[name="photoFile-${index}"]`);
+    const file = fileInput.files[0];
+
+    if (!file) {
+      status.innerText = "Please attach a photo for every photo card.";
+      return;
+    }
+
+    const p = Array.from(document.querySelectorAll(`input[name="p-${index}"]:checked`))
       .map(x => x.value)
       .join(", ");
 
-    let tactic = document.querySelector(`[name="tactic-${i}"]`).value;
+    let tactic = document.querySelector(`[name="tactic-${index}"]`).value;
 
     if (tactic === "Other") {
-      const otherVal = document.querySelector(`[name="other-${i}"]`).value.trim();
-    
+      const otherVal = document.querySelector(`[name="other-${index}"]`).value.trim();
+
       if (!otherVal) {
         status.innerText = "Please enter a custom tactic for 'Other'.";
         return;
       }
-    
+
       tactic = otherVal;
     }
 
     if (!p || !tactic) {
-      status.innerText = "Fill all photo fields.";
+      status.innerText = "Please complete all P and tactic fields.";
       return;
     }
 
     photos.push({
-      originalFileName: files[i].name,
-      mimeType: files[i].type,
-      base64: await toBase64(files[i]),
+      originalFileName: file.name,
+      mimeType: file.type,
+      base64: await toBase64(file),
       pSelection: p,
       tactic: tactic
     });
@@ -324,10 +383,12 @@ document.getElementById("form").addEventListener("submit", async e => {
     const result = await res.json();
 
     if (result.success) {
-      status.innerText = "Submitted successfully";
+      status.innerText = "Submitted successfully.";
       document.getElementById("form").reset();
       document.getElementById("photoFields").innerHTML = "";
       document.getElementById("accountId").value = "";
+      photoCount = 0;
+      addPhotoCard();
     } else {
       throw new Error(result.message);
     }
@@ -339,6 +400,7 @@ document.getElementById("form").addEventListener("submit", async e => {
 
 /* INIT */
 loadData();
+addPhotoCard();
 
 </script>
 </body>
